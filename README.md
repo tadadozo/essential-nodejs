@@ -1,6 +1,9 @@
 # essential-nodejs
 
 ## prolog
+
+### _für olaf zimmermann und elektrobeats bei radioeins!_
+
 Initially thought to be an introduction to nodejs in the vein of Don Box' essential com or essentiell .net.
 
 But now as Olaf Zimmermann of radioeins needs to stop his elektrobeats on radioeins I felt to start with the downloads of his podcasts from the ARD Audiothek.
