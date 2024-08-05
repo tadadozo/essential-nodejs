@@ -76,7 +76,7 @@ export const HttpClient = class {
   }
 
   async _withjson(query, body, method, modifyHeaderAction) {
-    var sbody = JSON.stringify(body);
+    var sbody = "string" === typeof(body) ? body : JSON.stringify(body);
     if (this.logResponse) { console.log("json body", sbody); }
     var headers = {
       'Content-Type': 'application/json'
@@ -85,7 +85,8 @@ export const HttpClient = class {
     };
     if (modifyHeaderAction) { modifyHeaderAction(headers); }
     try {
-      let response = await core.fetch(this._buildUrl(query), {
+      let url = this._buildUrl(query);
+      let response = await core.fetch(url, {
         method: method,
         body: sbody,
         headers: headers,
@@ -93,7 +94,7 @@ export const HttpClient = class {
       if (response) {
         var p = response;
         if (this.logResponse) { console.log("response", p); }
-        if (this.collectResponses) { this.addLogResponse({ query: query, body: body, method: method }, p); }
+        if (this.collectResponses) { this.addLogResponse({ query: url, body: body, method: method }, p); }
         try {
           if (null === p || "" === p) {
             return {};
@@ -102,10 +103,8 @@ export const HttpClient = class {
             //fine
           }
           else {
-            throw new Error(`Bad response status executing json request. status:${p.status}, '${p.statusText}', query:${query}, body:'${sbody}'`);
-          }
-          if (typeof (p) === "string") {
-            return await p.json();
+            console.error(">> url", url);
+            throw new Error(`Bad response status executing json request. status:${p.status}, '${p.statusText}', query:${url}, body:'${sbody}'`);
           }
           var pjson = null;
           try {

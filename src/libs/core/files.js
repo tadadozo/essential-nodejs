@@ -16,7 +16,6 @@ export const files = class files {
         return fileURLToPath(metaUrl);
     }
 
-
     static async pathExistsAsync(path) {
         try {
             await access(path);
