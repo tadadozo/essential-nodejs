@@ -2,15 +2,15 @@ import { ArdAudiothek } from "./base/ArdAudiothek.js";
 
 /*
 the download of all episodes on
-https://www.ardaudiothek.de/sendung/elektro-beats/87086250/
+https://www.ardaudiothek.de/sendung/laut-und-kantig/10361305/
 
 */
 
 //TODO:
 // specify the id and your prefix for the podcast
 let settings = {
-    id: "87086250",
-    name: "elektrobeats",
+    id: "10361305",
+    name: "lk",
     path: "./localdata"
     //comparePath: "../../../../../../dat/music/rbb/musik/r1-elektrobeats"
 };
@@ -23,9 +23,9 @@ let length = null; //the number of episodes starting at start, if length is null
 
 //retrieve data using the post query option for paging
 
-await m.retrieveProgramSetWithQueryAsync(start,length);
-await m.transformProgramSetAsync();
-await m.checkWebUrls();
-let onlyRelativePath = true;
-await m.dumpTextFiles(onlyRelativePath);
+// await m.retrieveProgramSetWithQueryAsync(start,length);
+// await m.transformProgramSetAsync();
+// await m.checkWebUrls();
+// let onlyRelativePath = true;
+// await m.dumpTextFiles(onlyRelativePath);
 await m.downloadAllAsync();

@@ -222,17 +222,22 @@ nicht vollständig angegeben.
             data = data.slice(0, length);
         }
         let index = 1;
-        let total = data.length;
-        await EnumerableExtensions.forEachAsync(data, async p => {
-            console.log(`${index++}/${total}`, p.name);
-            try {
-                await this.downloadPodcastAsync(p);
-            }
-            catch (e) {
-                console.error("⛔ failed to download", p.name);
-            }
-
-        });
+        let total = data.items.length;
+        if (total > 0){
+            await EnumerableExtensions.forEachAsync(data.items, async p => {
+                console.log(`${index++}/${total}`, p.name);
+                try {
+                    await this.downloadPodcastAsync(p);
+                }
+                catch (e) {
+                    console.error("⛔ failed to download", p.name);
+                }
+    
+            });
+        }
+        else {
+            console.warn("no items found");
+        }
     }
 
     async downloadByIdAsync(id, data) {
@@ -263,7 +268,8 @@ nicht vollständig angegeben.
                 .replaceAll("(", "")
                 .replaceAll(")", "")
                 .replaceAll("/", "-")
-                .replaceAll(":", "");
+                .replaceAll(":", "")
+                .replaceAll("?", "");
             console.log("download", "--", name);
             let url = podcast.downloadUrl;
             if (!url) {
