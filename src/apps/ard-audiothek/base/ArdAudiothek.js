@@ -40,7 +40,7 @@ export const ArdAudiothek = class {
             offsetString = ` offset:${start}`;
         }
         if (length){
-            firstString = ` start:${length}`;
+            firstString = ` first:${length}`;
         }
 
         //see _getTransformPodcast for what is needed here
@@ -158,8 +158,16 @@ export const ArdAudiothek = class {
     async downloadPodcastAsync(podcast) {
         if (podcast) {
             console.log("download", ">>", podcast.name);
+            //TODO: use regex
             let name = podcast.name;
-            name = name.replaceAll('"', '').replaceAll('&', ' ').replaceAll("\\", "-").replaceAll("(", "").replaceAll(")", "").replaceAll("/", "-");
+            name = name
+            .replaceAll('"', '')
+            .replaceAll('&', ' ')
+            .replaceAll("\\", "-")
+            .replaceAll("(", "")
+            .replaceAll(")", "")
+            .replaceAll("/", "-")
+            .replaceAll(":", "");
             console.log("download", "--", name);
             let url = podcast.downloadUrl;
             if (!url) {
@@ -168,15 +176,20 @@ export const ArdAudiothek = class {
             }
             let dir = `${this.config.path}/music/${this.config.name}`;
             let path = `${this.config.path}/music/${this.config.name} ${name}.mp3`;
+            let comparePath = path;
+            if (this.config.comparePath){
+                comparePath = `${this.config.comparePath}/${this.config.name} ${name}.mp3`
+            }
+
             await files.mkdirRecursiveAsync(dir);
-            if (await files.pathExistsAsync(path)){
-                console.log("download", "<<", podcast.name, "skipped, file exists already", path);
+            if (await files.pathExistsAsync(comparePath)){
+                console.log("☒ download", "<<", podcast.name, "skipped, file exists already", path);
             }
             else {
                 let content = await this.client.download(url);
             
                 await files.writeBufferAsync(path, content);
-                console.log("download", "<<", podcast.name);
+                console.log("✅ download", "<<", podcast.name);
             }
             
         }

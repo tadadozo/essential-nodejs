@@ -6,7 +6,8 @@ let args = ProcessArguments.create();
 let settings = {
     id: "",
     name: args.map.name,
-    path: "./localdata",
+    path: "./localdata"
+    //comparePath: "../../../../../../dat/music/rbb/musik/r1-elektrobeats"
 };
 
 if (!settings.name) {
