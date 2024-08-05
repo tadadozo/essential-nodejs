@@ -23,6 +23,9 @@ let length = null; //the number of episodes starting at start, if length is null
 
 //retrieve data using the post query option for paging
 
-//await m.retrieveProgramSetWithQueryAsync(start,length);
-//await m.transformProgramSetAsync();
+await m.retrieveProgramSetWithQueryAsync(start,length);
+await m.transformProgramSetAsync();
+await m.checkWebUrls();
+let onlyRelativePath = true;
+await m.dumpTextFiles(onlyRelativePath);
 await m.downloadAllAsync();

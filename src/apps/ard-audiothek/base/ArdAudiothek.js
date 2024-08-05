@@ -36,10 +36,10 @@ export const ArdAudiothek = class {
         let id = this.config.id;
         let offsetString = "";
         let firstString = "";
-        if (start){
+        if (start) {
             offsetString = ` offset:${start}`;
         }
-        if (length){
+        if (length) {
             firstString = ` first:${length}`;
         }
 
@@ -47,7 +47,7 @@ export const ArdAudiothek = class {
         let q = `
 { 
   query:programSet(id:${id}){
-    id title numberOfElements 
+    id title numberOfElements feedUrl feedUrl2 sharingUrl
     items(orderBy:PUBLISH_DATE_DESC${firstString}${offsetString}){
       nodes {
         id publicationStartDateAndTime title synopsis duration url
@@ -95,22 +95,118 @@ export const ArdAudiothek = class {
 }        
 `.trim();
     }
-    
+
 
     async retrievePodcastDirectAsync(id) {
         let response = await this.retrieveAsync(`/items/${id}`);
         return await jsn(response, 'data.item.' + this._getTransformPodcast());
     }
 
-    
+
 
     async transformProgramSetAsync() {
         let data = await files.readJsonAsync(`${this.config.path}/${this.config.name}-0-programset.json`);
-        data = await jsn(data, 'data.programSet.items.nodes.' + this._getTransformPodcast());
+        let query =
+            `   
+data.programSet{
+"id":$.id,
+"title":$.title,
+"numberOfElements":$.numberOfElements,
+"feedUrl":$.feedUrl,
+"sharingUrl":$.sharingUrl,
+"items": items.nodes.`
+            + this._getTransformPodcast()
+            + "}";
+
+        data = await jsn(data, query);
 
         await files.writeJsonAsync(`${this.config.path}/${this.config.name}-1-podcasts.json`, data);
+
+
+    }
+
+    async checkWebUrls() {
+        let data = await files.readJsonAsync(`${this.config.path}/${this.config.name}-1-podcasts.json`);
+
+        await EnumerableExtensions.forEachAsync(data.items, async p => {
+            try {
+                p.weburlstatus = "";
+                await this.client.getRaw(p.weburl);
+                p.weburlstatus = "valid";
+            }
+            catch {
+                p.weburlstatus = "invalid";
+            }
+            console.log(p.name, p.weburlstatus);
+        });
+        await files.writeJsonAsync(`${this.config.path}/${this.config.name}-1-podcasts.json`, data);
+    }
+
+    async dumpTextFiles(onlyRelativePath) {
+        let data = await files.readJsonAsync(`${this.config.path}/${this.config.name}-1-podcasts.json`);
+        //-- additionally store with synopsis
         await files.writeTextAsync(`${this.config.path}/${this.config.name}-1-podcasts.text`,
-            data.map(p => `${p.id} ${p.name} // ${p.synopsis}`).join("\r\n"));
+            data.items.map(p => `${p.id} ${p.name} // ${p.synopsis}`).join("\r\n"));
+        //-- store urls
+        let lastyear = "";
+        await files.writeTextAsync(`${this.config.path}/${this.config.name}-1-podcast-urls.text`,
+`
+${data.title.toUpperCase()}
+    ${data.sharingUrl}
+    feed: ${data.feedUrl}
+
+wenn die episode url invalid ist,
+dann gibt es immer noch folgende Möglichkeit:
+Öffne die offizielle Seite
+https://api.ardaudiothek.de/graphiql
+
+auf der linken Seite gibst Du folgendes ein (die id deiner episode eingeben)
+und drückst oben den Go button.
+Unter Umständen erhälst Du jetzt weitere Infos
+wo die Musik liegt.
+
+{ 
+  query:item(id:13598589){
+    id publishDate title sharingUrl summary
+    audios {
+      url downloadUrl
+    }
+  }
+}
+
+Bei den folgenden links bitte jeweils
+die audiothek url voranstellen
+fb verhunzt die urls, deshalb habe ich sie
+nicht vollständig angegeben.
+`.trim()
+            + "\r\n\r\n"
+            + data.items.map(p => {
+                let value = "";
+                let year = p.name.substring(0, 4);
+                if (lastyear !== year) {
+                    value = `▶ ${year}\r\n\r\n`;
+                    lastyear = year;
+                }
+                let url = p.weburl;
+                if (onlyRelativePath){
+                    url = url.replace("https://www.ardaudiothek.de", "");
+                }
+
+                if ("" === p.weburlstatus || "valid" === p.weburlstatus){
+                    value += `✅ ${p.name}`;
+                }
+                else {
+                    value += `❗ ${p.name}`;
+                }
+                value += `\r\n${url}\r\n/episode/${p.id}`;
+                if (p.weburlstatus){
+                    value += `\r\nepisode url:${p.weburlstatus}`;
+                }
+                
+                //-- fullpath
+                //value += `⏩ ${p.name}\r\n${p.weburl}`;
+                return value;
+            }).join("\r\n\r\n"));
     }
 
     async downloadAllAsync(start, length) {
@@ -129,13 +225,13 @@ export const ArdAudiothek = class {
         let total = data.length;
         await EnumerableExtensions.forEachAsync(data, async p => {
             console.log(`${index++}/${total}`, p.name);
-            try{
+            try {
                 await this.downloadPodcastAsync(p);
             }
-            catch(e){
+            catch (e) {
                 console.error("⛔ failed to download", p.name);
             }
-            
+
         });
     }
 
@@ -161,13 +257,13 @@ export const ArdAudiothek = class {
             //TODO: use regex
             let name = podcast.name;
             name = name
-            .replaceAll('"', '')
-            .replaceAll('&', ' ')
-            .replaceAll("\\", "-")
-            .replaceAll("(", "")
-            .replaceAll(")", "")
-            .replaceAll("/", "-")
-            .replaceAll(":", "");
+                .replaceAll('"', '')
+                .replaceAll('&', ' ')
+                .replaceAll("\\", "-")
+                .replaceAll("(", "")
+                .replaceAll(")", "")
+                .replaceAll("/", "-")
+                .replaceAll(":", "");
             console.log("download", "--", name);
             let url = podcast.downloadUrl;
             if (!url) {
@@ -177,21 +273,21 @@ export const ArdAudiothek = class {
             let dir = `${this.config.path}/music/${this.config.name}`;
             let path = `${this.config.path}/music/${this.config.name} ${name}.mp3`;
             let comparePath = path;
-            if (this.config.comparePath){
+            if (this.config.comparePath) {
                 comparePath = `${this.config.comparePath}/${this.config.name} ${name}.mp3`
             }
 
             await files.mkdirRecursiveAsync(dir);
-            if (await files.pathExistsAsync(comparePath)){
+            if (await files.pathExistsAsync(comparePath)) {
                 console.log("☒ download", "<<", podcast.name, "skipped, file exists already", path);
             }
             else {
                 let content = await this.client.download(url);
-            
+
                 await files.writeBufferAsync(path, content);
                 console.log("✅ download", "<<", podcast.name);
             }
-            
+
         }
         else {
             console.log("podcast not found", id);
