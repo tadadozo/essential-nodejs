@@ -1,5 +1,5 @@
-import { ProcessArguments } from "../../libs/core/ProcessArguments.js";
-import { ArdAudiothek } from "./base/ArdAudiothek.js";
+import { ProcessArguments } from "../../../libs/core/ProcessArguments.js";
+import { ArdAudiothek } from "../base/ArdAudiothek.js";
 
 let args = ProcessArguments.create();
 

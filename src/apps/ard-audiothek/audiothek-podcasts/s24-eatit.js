@@ -1,4 +1,4 @@
-import { ArdAudiothek } from "./base/ArdAudiothek.js";
+import { ArdAudiothek } from "../base/ArdAudiothek.js";
 
 /*
 the download of all episode on
